@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f0f0f">
+    <title>ZERO-TUBE</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <button class="menu-toggle touch-feedback" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <div class="logo-area" onclick="routerNavigate('home')">
+                <img src="https://image.qwenlm.ai/public_source/31ff77e3-4f33-41fc-8a8f-9928af5f6794/1a05e7c29-642a-46d3-9d1a-ded20493b194.png" class="logo-img">
+                <span class="logo-text">ZERO-TUBE</span>
+            </div>
+        </div>
+        <div class="search-container">
+            <div class="search-input-wrapper">
+                <input type="text" id="searchInput" placeholder="Search" onkeypress="if(event.key==='Enter')handleSearch()">
+            </div>
+            <button class="search-btn touch-feedback" onclick="handleSearch()"><i class="fas fa-search"></i></button>
+        </div>
+        <div class="header-right">
+            <button class="icon-btn upload-btn touch-feedback" onclick="openUploadModal()"><i class="fas fa-video"></i></button>
+            <button class="icon-btn touch-feedback" onclick="toggleNotifications()" id="notifBtn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge hidden" id="notifBadge">0</span>
+            </button>
+            <div class="theme-toggle">
+                <button class="icon-btn touch-feedback" onclick="toggleThemeDropdown()"><i class="fas fa-moon" id="themeIcon"></i></button>
+                <div class="theme-dropdown" id="themeDropdown">
+                    <div class="theme-option" onclick="setTheme('dark')" data-theme="dark"><i class="fas fa-moon"></i> Dark</div>
+                    <div class="theme-option" onclick="setTheme('light')" data-theme="light"><i class="fas fa-sun"></i> Light</div>
+                </div>
+            </div>
+            <div id="authButtons">
+                <button class="create-btn touch-feedback" onclick="openAuthModal('login')">Sign In</button>
+            </div>
+            <div class="user-menu touch-feedback" id="userMenu" onclick="toggleUserDropdown()">
+                <img src="" class="user-avatar" id="navAvatar">
+                <i class="fas fa-chevron-down" style="font-size:0.75rem;"></i>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dropdown-item" onclick="routerNavigate('channel',currentUser?currentUser.id:null)"><i class="fas fa-user"></i> Channel</div>
+                    <div class="dropdown-item" onclick="openPlaylistsModal()"><i class="fas fa-list"></i> Playlists</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-item active" onclick="routerNavigate('home')"><i class="fas fa-home"></i><span>Home</span></div>
+            <div class="sidebar-item" onclick="routerNavigate('trending')"><i class="fas fa-fire"></i><span>Trending</span></div>
+            <div class="sidebar-item" onclick="routerNavigate('subscriptions')"><i class="fas fa-play-circle"></i><span>Subscriptions</span></div>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-title">Library</div>
+            <div class="sidebar-item" onclick="routerNavigate('history')"><i class="fas fa-history"></i><span>History</span></div>
+            <div class="sidebar-item" onclick="openPlaylistsModal()"><i class="fas fa-list"></i><span>Playlists</span></div>
+        </div>
+    </nav>
+
+    <nav class="bottom-nav" id="bottomNav">
+        <div class="bottom-nav-items">
+            <div class="bottom-nav-item active" onclick="routerNavigate('home')"><i class="fas fa-home"></i><span>Home</span></div>
+            <div class="bottom-nav-item" onclick="routerNavigate('trending')"><i class="fas fa-compass"></i><span>Explore</span></div>
+            <div class="bottom-nav-item" onclick="openUploadModal()"><i class="fas fa-plus-circle" style="font-size:1.6rem;"></i><span>Create</span></div>
+            <div class="bottom-nav-item" onclick="openPlaylistsModal()"><i class="fas fa-folder"></i><span>Library</span></div>
+            <div class="bottom-nav-item" onclick="toggleUserDropdownMobile()"><i class="fas fa-user"></i><span>You</span></div>
+        </div>
+    </nav>
+
+    <main id="mainContent"></main>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="authTitle">Sign In</h2>
+                <button class="modal-close touch-feedback" onclick="closeModal('authModal')">&times;</button>
+            </div>
+            <form id="authForm" onsubmit="handleAuth(event)">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="authEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="authPassword" required minlength="6">
+                </div>
+                <button type="submit" class="create-btn" style="width:100%">Submit</button>
+            </form>
+            <div class="text-center mt-4">
+                <span class="text-muted" id="authSwitchText">No account? <span class="text-accent" style="cursor:pointer" onclick="toggleAuthMode()">Sign Up</span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upload Video</h2>
+                <button class="modal-close touch-feedback" onclick="closeModal('uploadModal')">&times;</button>
+            </div>
+            <form id="uploadForm" onsubmit="handleUpload(event)">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" id="vidTitle" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Video URL</label>
+                    <input type="url" class="form-input" id="vidUrl" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Thumbnail URL</label>
+                    <input type="url" class="form-input" id="vidThumb">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-input form-textarea" id="vidDesc"></textarea>
+                </div>
+                <button type="submit" class="create-btn" style="width:100%">Publish</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="playlistsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Playlists</h2>
+                <button class="modal-close touch-feedback" onclick="closeModal('playlistsModal')">&times;</button>
+            </div>
+            <div class="flex gap-2 mb-4">
+                <input type="text" class="form-input" id="newPlaylistName" placeholder="New playlist">
+                <button class="create-btn touch-feedback" onclick="createPlaylist()">Create</button>
+            </div>
+            <div id="playlistsList"></div>
+        </div>
+    </div>
+
+    <div class="notifications-panel" id="notificationsPanel">
+        <div class="notifications-header">
+            <h3>Notifications</h3>
+            <span class="mark-read-btn" onclick="markAllRead()">Mark all read</span>
+        </div>
+        <div class="notifications-list" id="notificationsList"></div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+                      </html>
